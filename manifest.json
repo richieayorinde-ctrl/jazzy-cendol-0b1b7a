@@ -1,0 +1,15 @@
+{
+  "name": "Family Water Sort",
+  "short_name": "FamilySort",
+  "start_url": "./family-water-sort.html",
+  "display": "standalone",
+  "background_color": "#ff8fab",
+  "theme_color": "#ff5e8a",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/589/589075.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

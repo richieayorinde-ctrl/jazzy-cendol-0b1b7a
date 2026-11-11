@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Water Sort</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://js.paystack.co/v1/inline.js"></script>
+<style>
+body{margin:0;font-family:Arial,sans-serif;background:#10183a;min-height:100vh;display:flex;flex-direction:column;align-items:center;color:#fff}
+.top{width:92%;max-width:400px;display:flex;justify-content:space-between;align-items:center;padding:16px 0}
+.pill{background:#fff;color:#111;padding:8px 14px;border-radius:20px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:5px}
+.coin-pill{background:linear-gradient(#ffdf4d,#ffb800);color:#5a3a00;border:1px solid #ffcc00}
+.tubes{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;width:92%;max-width:400px;min-height:48vh;align-items:end;margin-top:15px}
+.tube-wrap{position:relative;display:flex;justify-content:center}
+.tube{width:58px;height:162px;background:linear-gradient(90deg,rgba(180,190,255,0.06),rgba(200,210,255,0.12) 15%,rgba(255,255,255,0.02) 50%,rgba(200,210,255,0.15) 85%);border:2px solid rgba(255,255,255,0.85);border-radius:0 0 28px 28px;position:relative;cursor:pointer;display:flex;flex-direction:column-reverse;overflow:hidden;transition:.2s}
+.tube.selected{transform:translateY(-18px);border-color:#ffeb3b}
+.water{width:100%;height:37px}
+.check{position:absolute;top:-12px;right:-6px;width:24px;height:24px;background:#4caf50;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;border:2px solid #fff;z-index:10}
+.controls{display:flex;gap:10px;margin-top:24px}
+.btn{background:#fff;border:none;width:76px;height:70px;border-radius:18px;font-size:11px;font-weight:800;color:#222;cursor:pointer;position:relative}
+.btn-cost{position:absolute;top:-6px;right:-6px;background:#ffcc00;color:#5a3a00;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:900}
+.levels{width:92%;max-width:400px;margin-top:24px}
+.grid5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.lvl{height:46px;border-radius:12px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;cursor:pointer}
+.lvl.active{background:#fff;color:#111}
+.lvl.done{background:#4caf50}
+#toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#111;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:700;display:none;z-index:100}
+#ad-banner{width:92%;max-width:400px;min-height:60px;background:#fff;border-radius:12px;margin-top:15px;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:5px 0}
+#removeAdsBtn{background:linear-gradient(#ff5a8a,#ff1a5a);color:#fff;border:none;padding:10px 16px;border-radius:20px;font-weight:800;font-size:12px;margin-top:12px;cursor:pointer}
+#shopModal{position:fixed;inset:0;background:rgba(0,0,0,0.8);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.shopBox{background:#fff;color:#111;border-radius:20px;width:92%;max-width:360px;padding:20px;text-align:center}
+.shopItem{display:flex;justify-content:space-between;align-items:center;background:#f5f5f5;padding:12px 14px;border-radius:14px;margin:10px 0;cursor:pointer}
+.buyBtn{background:#10183a;color:#fff;border:none;padding:8px 14px;border-radius:20px;font-weight:800;font-size:12px}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="shopModal">
+<div class="shopBox">
+<h3 style="margin:0">🪙 Buy Coins</h3>
+<p style="font-size:12px;color:#666">Use coins to add extra tubes</p>
+<div class="shopItem" onclick="buyCoins(100,500)"><b>🪙 100</b><span>₦500 <button class="buyBtn">Buy</button></span></div>
+<div class="shopItem" onclick="buyCoins(350,1000)"><b>🪙 350 POPULAR</b><span>₦1000 <button class="buyBtn">Buy</button></span></div>
+<div class="shopItem" onclick="buyCoins(800,2000)"><b>🪙 800</b><span>₦2000 <button class="buyBtn">Buy</button></span></div>
+<div class="shopItem" onclick="buyCoins(2000,4000)"><b>🪙 2000 BEST</b><span>₦4000 <button class="buyBtn">Buy</button></span></div>
+<button onclick="closeShop()" style="margin-top:15px;background:#eee;border:none;padding:10px 20px;border-radius:20px;font-weight:700">Close</button>
+</div>
+</div>
+<div class="top">
+<div style="display:flex;gap:8px">
+<div class="pill" id="lvlTxt">Level 1</div>
+<div class="pill coin-pill" onclick="openShop()">🪙 <span id="coinTxt">0</span></div>
+</div>
+<div style="display:flex;gap:8px">
+<div class="pill" id="movesTxt">Moves: 0</div>
+<button id="soundBtn" onclick="toggleSound()" style="width:42px;height:42px;border-radius:50%;border:none;background:#fff">🔊</button>
+</div>
+</div>
+<div class="tubes" id="tubeArea"></div>
+<div style="margin-top:18px;font-size:13px;opacity:.6">Par: 12 moves</div>
+<div class="controls">
+<button class="btn" onclick="undo()">↩️<br>Undo</button>
+<button class="btn" onclick="restart()">🔄<br>Restart</button>
+<button class="btn" onclick="hint()">💡<br>Hint</button>
+<button class="btn" onclick="addTube()">➕<br>Add Tube <span class="btn-cost">30 🪙</span></button>
+</div>
+<div id="ad-banner">
+<script>atOptions={'key':'afc555814867444a58b9b938d28be585','format':'iframe','height':50,'width':320,'params':{}};</script>
+<script src="https://www.highperformanceformat.com/afc555814867444a58b9b938d28be585/invoke.js"></script>
+</div>
+<button id="removeAdsBtn" onclick="confirmRemoveAds()">💳 Remove Ads</button>
+<div class="levels"><div style="font-size:13px;margin:0 4px 10px" id="batchTitle"></div><div class="grid5" id="levelGrid"></div></div>
+<script>
+let soundOn=localStorage.getItem('fs_sound')!=='off',audioCtx;
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx}
+function play(f,d){if(!soundOn)return;try{const c=getCtx(),o=c.createOscillator(),g=c.createGain();o.frequency.value=f;o.connect(g);g.connect(c.destination);g.gain.setValueAtTime(0.2,c.currentTime);g.gain.exponentialRampToValueAtTime(0.01,c.currentTime+d);o.start();o.stop(c.currentTime+d)}catch(e){}}
+function toggleSound(){soundOn=!soundOn;localStorage.setItem('fs_sound',soundOn?'on':'off');document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇'}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.style.display='block';setTimeout(()=>t.style.display='none',2000)}
+document.getElementById('soundBtn').textContent=soundOn?'🔊':'🔇';
+const COLORS=['#ffcf3d','#7a6cff','#ff8f3d','#5ecfff'];
+let level=1,maxUnlocked=parseInt(localStorage.getItem('fs_max')||'2'),coins=parseInt(localStorage.getItem('fs_coins')||'0'),moves=0,tubes=[],history=[],selected=null;
+function updateCoins(){document.getElementById('coinTxt').textContent=coins;localStorage.setItem('fs_coins',coins)}
+function generateLevel(){const count=3;let all=[];for(let c=0;c<count;c++)for(let i=0;i<4;i++)all.push(c);for(let i=all.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[all[i],all[j]]=[all[j],all[i]]}let nt=[];for(let t=0;t<count;t++)nt.push(all.splice(0,4));nt.push([]);nt.push([]);for(let i=nt.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[nt[i],nt[j]]=[nt[j],nt[i]]}return nt}
+function renderTubes(){const a=document.getElementById('tubeArea');a.innerHTML='';tubes.forEach((tube,i)=>{const wrap=document.createElement('div');wrap.className='tube-wrap';const d=document.createElement('div');d.className='tube'+(selected===i?' selected':'');if(tube.length===4&&tube.every(c=>c===tube[0])){const chk=document.createElement('div');chk.className='check';chk.textContent='✓';wrap.appendChild(chk)}d.onclick=()=>clickTube(i);tube.forEach(c=>{const w=document.createElement('div');w.className='water';w.style.background=COLORS[c];d.appendChild(w)});wrap.appendChild(d);a.appendChild(wrap)});document.getElementById('lvlTxt').textContent='Level '+level;document.getElementById('movesTxt').textContent='Moves: '+moves;updateCoins()}
+function isDone(t){return t.length===4&&t.every(c=>c===t[0])}
+function clickTube(i){if(selected===null){if(tubes[i].length>0){selected=i;renderTubes()}return}if(selected===i){selected=null;renderTubes();return}const from=tubes[selected],to=tubes[i];if(to.length>=4||(to.length>0&&to[to.length-1]!==from[from.length-1])){selected=null;renderTubes();return}const col=from[from.length-1];let cnt=0;for(let k=from.length-1;k>=0&&from[k]===col;k--)cnt++;let pour=Math.min(cnt,4-to.length);history.push(JSON.parse(JSON.stringify(tubes)));for(let p=0;p<pour;p++)to.push(from.pop());moves++;selected=null;play(500,0.2);renderTubes();checkWin()}
+function checkWin(){if(tubes.every(t=>t.length===0||isDone(t))){play(900,0.5);coins+=5;updateCoins();toast('+5 🪙 Coins!');if(level===maxUnlocked&&maxUnlocked<80){maxUnlocked++;localStorage.setItem('fs_max',maxUnlocked)}setTimeout(()=>{if(level<80){level++;localStorage.setItem('fs_level',level);loadLevel(level)}},800)}}
+function loadLevel(lv){if(lv>maxUnlocked)return;level=lv;moves=0;history=[];selected=null;tubes=generateLevel(lv);renderTubes();renderGrid()}
+function renderGrid(){const batch=Math.ceil(maxUnlocked/5);const start=(batch-1)*5+1;document.getElementById('batchTitle').textContent='Levels '+start+' - '+(start+4);const g=document.getElementById('levelGrid');g.innerHTML='';for(let i=start;i<=start+4&&i<=80;i++){const d=document.createElement('div');d.className='lvl';if(i===level)d.classList.add('active');if(i<=maxUnlocked){if(i<maxUnlocked)d.classList.add('done');d.textContent=i;d.onclick=()=>loadLevel(i)}else{d.classList.add('locked');d.textContent='🔒'}g.appendChild(d)}}
+function undo(){if(history.length){tubes=history.pop();moves=Math.max(0,moves-1);selected=null;renderTubes()}}
+function restart(){loadLevel(level)}
+function openShop(){document.getElementById('shopModal').style.display='flex'}
+function closeShop(){document.getElementById('shopModal').style.display='none'}
+function addTube(){if(coins<30){toast('Not enough coins! 🪙');setTimeout(()=>openShop(),600);return}if(tubes.length>=10){toast('Max tubes');return}coins-=30;updateCoins();history.push(JSON.parse(JSON.stringify(tubes)));tubes.push([]);renderTubes();toast('-30 🪙 Tube added')}
+function hint(){for(let f=0;f<tubes.length;f++)for(let t=0;t<tubes.length;t++)if(f!==t){let from=tubes[f],to=tubes[t];if(from.length===0)continue;if(to.length>=4)continue;if(to.length===0||to[to.length-1]===from[from.length-1]){selected=f;renderTubes();setTimeout(()=>{selected=null;renderTubes()},700);return}}}
+function confirmRemoveAds(){if(confirm('Remove Ads forever for ₦2000?')){pay(2000,'remove')}}
+function buyCoins(qty,price){closeShop();if(confirm('Buy '+qty+' 🪙 for ₦'+price+'?')){pay(price,'coins',qty)}}
+function pay(naira,type,qty=0){let h=PaystackPop.setup({key:'pk_test_a3c3d7dd7a7dcfff4e2744dc046563f1e08af9c9',email:'player'+Math.floor(Math.random()*10000)+'@gmail.com',amount:naira*100,currency:'NGN',ref:'FS'+Math.floor(Math.random()*1000000000),onClose:function(){toast('Cancelled')},callback:function(r){if(type==='remove'){toast('✅ Ads removed!');document.getElementById('ad-banner').style.display='none';document.getElementById('removeAdsBtn').style.display='none';localStorage.setItem('adsRemoved','true')}else{coins+=qty;updateCoins();toast('✅ +'+qty+' 🪙 added')}}});h.openIframe()}
+if(localStorage.getItem('adsRemoved')=='true'){document.getElementById('ad-banner').style.display='none';document.getElementById('removeAdsBtn').style.display='none'}
+updateCoins();loadLevel(parseInt(localStorage.getItem('fs_level')||'1'));
+</script>
+</body>
+</html>
